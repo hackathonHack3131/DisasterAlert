@@ -1,0 +1,37 @@
+package com.disaster.model;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.GeoSpatialIndexed;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.Instant;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "users")
+public class User {
+    @Id
+    private String id;
+    @Indexed(unique = true)
+    private String username;
+    @Indexed(unique = true)
+    private String email;
+    private String password;
+    private String location;
+    private String state;
+    private String city;
+    private UserRole role;
+    private boolean verified;
+    @GeoSpatialIndexed
+    private GeoLocation geoLocation;
+    private double latitude;
+    private double longitude;
+    private Instant createdAt;
+}

@@ -1,0 +1,374 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #030308;
+  color: rgba(255, 255, 255, 0.92);
+  overflow-x: hidden;
+}
+
+/* Dashboard ambient background */
+.dashboard-bg {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 80, 255, 0.18), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 50%, rgba(255, 45, 85, 0.08), transparent),
+    radial-gradient(ellipse 50% 30% at 0% 80%, rgba(0, 240, 255, 0.06), transparent),
+    #030308;
+}
+
+.glass {
+  background: rgba(12, 14, 24, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-strong {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(32px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 0 0 1px rgba(0, 80, 255, 0.05) inset,
+    0 20px 50px -20px rgba(0, 0, 0, 0.5);
+}
+
+.glow-card {
+  @apply glass-strong rounded-2xl transition-all duration-500;
+}
+
+.glow-card:hover {
+  border-color: rgba(0, 80, 255, 0.25);
+  box-shadow:
+    0 0 40px -10px rgba(0, 80, 255, 0.35),
+    0 20px 50px -20px rgba(0, 0, 0, 0.5);
+}
+
+.text-headline {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.text-body {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* Metric card shimmer */
+.metric-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg, rgba(15, 18, 35, 0.9) 0%, rgba(8, 10, 20, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+}
+
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 80, 255, 0.6), transparent);
+}
+
+.layer-btn-active {
+  background: linear-gradient(135deg, rgba(0, 80, 255, 0.25) 0%, rgba(0, 240, 255, 0.1) 100%);
+  border: 1px solid rgba(0, 80, 255, 0.5);
+  box-shadow: 0 0 20px -5px rgba(0, 80, 255, 0.5);
+}
+
+/* Leaflet overrides */
+.leaflet-container {
+  background: #0a0c14 !important;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.leaflet-control-zoom a {
+  background: rgba(12, 14, 24, 0.9) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(0, 0, 0, 0.5) !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+  font-size: 9px !important;
+}
+
+.map-scanline {
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 80, 255, 0.03) 2px,
+    rgba(0, 80, 255, 0.03) 4px
+  );
+}
+
+.pulse-ring {
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 0.4; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.mapboxgl-ctrl-logo,
+.mapboxgl-ctrl-attrib {
+  display: none !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 80, 255, 0.4);
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.climate-command-header {
+  position: relative;
+  padding: 26px;
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(0, 80, 255, 0.16), rgba(255, 45, 85, 0.08) 48%, rgba(0, 240, 255, 0.08)),
+    rgba(7, 10, 22, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(0, 240, 255, 0.08) inset,
+    0 24px 70px -42px rgba(0, 80, 255, 0.9);
+}
+
+.climate-command-header::before,
+.climate-command-header::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.climate-command-header::before {
+  background-image:
+    linear-gradient(rgba(0, 240, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.08) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.75), transparent 78%);
+}
+
+.climate-command-header::after {
+  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.34), transparent);
+  height: 1px;
+  top: 0;
+  animation: command-scan 4s ease-in-out infinite;
+}
+
+.mission-stat-tile {
+  min-width: 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  gap: 4px;
+}
+
+.mission-stat-tile span {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.mission-stat-tile strong {
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 14px;
+}
+
+@keyframes command-scan {
+  0%, 100% { transform: translateX(-80%); opacity: 0; }
+  40%, 70% { opacity: 1; }
+  100% { transform: translateX(80%); }
+}
+
+.map-cinematic-overlay {
+  mix-blend-mode: screen;
+}
+
+.map-intel-grid {
+  opacity: 0.28;
+  background-image:
+    linear-gradient(rgba(0, 240, 255, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.16) 1px, transparent 1px),
+    radial-gradient(circle at 52% 48%, transparent 0 19%, rgba(0, 240, 255, 0.12) 20%, transparent 21% 36%, rgba(0, 240, 255, 0.08) 37%, transparent 38%);
+  background-size: 46px 46px, 46px 46px, 420px 420px;
+}
+
+.satellite-sweep {
+  position: absolute;
+  inset: -20% 0 auto 0;
+  height: 30%;
+  background: linear-gradient(180deg, transparent, rgba(0, 240, 255, 0.15), transparent);
+  filter: blur(2px);
+  animation: satellite-sweep 5.5s linear infinite;
+}
+
+.radar-sweep {
+  position: absolute;
+  width: 56%;
+  aspect-ratio: 1;
+  left: 25%;
+  top: 14%;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(0, 240, 255, 0.28), rgba(0, 240, 255, 0.02) 18%, transparent 28%);
+  mask-image: radial-gradient(circle, transparent 0 18%, rgba(0,0,0,0.9) 19% 20%, transparent 21% 42%, rgba(0,0,0,0.7) 43% 44%, transparent 45% 100%);
+  animation: radar-spin 7s linear infinite;
+}
+
+.threat-blob {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(22px);
+  opacity: 0.62;
+  transform: translateZ(0);
+}
+
+.threat-blob-critical {
+  width: 28%;
+  aspect-ratio: 1;
+  left: 42%;
+  top: 37%;
+  background: radial-gradient(circle, rgba(127, 29, 29, 0.96), rgba(239, 68, 68, 0.42) 42%, transparent 72%);
+  animation: danger-diffuse 4s ease-in-out infinite;
+}
+
+.threat-blob-warning {
+  width: 22%;
+  aspect-ratio: 1;
+  left: 58%;
+  top: 22%;
+  background: radial-gradient(circle, rgba(249, 115, 22, 0.82), rgba(250, 204, 21, 0.34) 46%, transparent 72%);
+  animation: danger-diffuse 5.2s ease-in-out infinite reverse;
+}
+
+.threat-ring {
+  position: absolute;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 45, 85, 0.75);
+  box-shadow: 0 0 26px rgba(255, 45, 85, 0.35);
+  opacity: 0;
+}
+
+.threat-ring-a {
+  width: 16%;
+  aspect-ratio: 1;
+  left: 48%;
+  top: 43%;
+  animation: threat-ring 2.8s ease-out infinite;
+}
+
+.threat-ring-b {
+  width: 12%;
+  aspect-ratio: 1;
+  left: 62%;
+  top: 30%;
+  animation: threat-ring 3.4s ease-out infinite 0.8s;
+}
+
+.ai-signal-tile,
+.alert-feed-card {
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ai-signal-tile {
+  padding: 9px;
+  display: grid;
+  gap: 3px;
+}
+
+.ai-signal-tile span {
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 9px;
+}
+
+.ai-signal-tile strong {
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.alert-feed-card {
+  padding: 9px;
+}
+
+.timeline-slider {
+  height: 4px;
+  cursor: pointer;
+}
+
+.timeline-slider::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #00f0ff;
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.95);
+}
+
+@keyframes satellite-sweep {
+  0% { transform: translateY(-20%); opacity: 0; }
+  12%, 76% { opacity: 1; }
+  100% { transform: translateY(430%); opacity: 0; }
+}
+
+@keyframes radar-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes danger-diffuse {
+  0%, 100% { transform: scale(0.94); opacity: 0.52; }
+  50% { transform: scale(1.12); opacity: 0.86; }
+}
+
+@keyframes threat-ring {
+  0% { transform: scale(0.55); opacity: 0.9; }
+  100% { transform: scale(2.15); opacity: 0; }
+}
+
+@media (max-width: 640px) {
+  .climate-command-header {
+    padding: 20px;
+    border-radius: 14px;
+  }
+
+  .mission-stat-tile span {
+    font-size: 9px;
+  }
+}
