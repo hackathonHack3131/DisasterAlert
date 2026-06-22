@@ -451,7 +451,7 @@ This project was built as a hackathon submission. Contributions, bug reports, an
 
 **Gaurang**
 Computer Science Engineering — PIEMR, Indore
-[GitHub](https://github.com/yourusername) · [LinkedIn](https://linkedin.com/in/yourprofile)
+[GitHub](https://github.com/gaurangchouhan) · [LinkedIn](https://www.linkedin.com/in/gaurang-chouhan-68054630b/)
 
 ---
 
