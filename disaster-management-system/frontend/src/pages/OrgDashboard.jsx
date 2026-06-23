@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { eventsApi, rescueApi, shelterApi } from '../lib/api'
 import { createStompClient, subscribeAlerts, subscribeRescue } from '../lib/websocket'
-import ClimateIntelligenceMap from '../components/ClimateIntelligenceMap'
+import UnifiedDisasterMap from '../components/map/UnifiedDisasterMap'
 
 export default function OrgDashboard() {
   const navigate = useNavigate()
@@ -67,7 +67,9 @@ export default function OrgDashboard() {
       </header>
 
       <div className="p-4 max-w-[1600px] mx-auto space-y-4">
-        <ClimateIntelligenceMap events={events} shelters={shelters} center={{ lat: 19.076, lng: 72.8777 }} />
+        <div className="h-[600px] rounded-2xl overflow-hidden relative border border-white/10">
+          <UnifiedDisasterMap events={events} shelters={shelters} alerts={[]} center={{ lat: 19.076, lng: 72.8777 }} onSimulate={() => {}} />
+        </div>
         <div className="grid lg:grid-cols-2 gap-4">
 
         <div className="space-y-4">

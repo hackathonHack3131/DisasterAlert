@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authApi } from '../lib/api'
-import OtpModal from '../components/OtpModal'
 import Navbar from '../components/Navbar'
 
 export default function Signup() {
   const navigate = useNavigate()
-  const [pendingEmail, setPendingEmail] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [step, setStep] = useState(1) // 1 = Registration form, 2 = OTP form
+  const [email, setEmail] = useState('')
 
   const handleRegister = async (e) => {
     e.preventDefault()
@@ -16,27 +16,42 @@ export default function Signup() {
     setLoading(true)
     const fd = new FormData(e.target)
     const data = Object.fromEntries(fd)
+    if (data.password !== data.confirmPassword) {
+      setError('Passwords do not match')
+      setLoading(false)
+      return
+    }
     try {
-      await authApi.register(data)
-      setPendingEmail(data.email)
+      const res = await authApi.register(data)
+      if (res.data.requireOtp) {
+        setEmail(data.email)
+        setStep(2)
+      } else {
+        localStorage.setItem('token', res.data.token)
+        localStorage.setItem('role', res.data.role)
+        localStorage.setItem('username', res.data.username)
+        navigate('/dashboard')
+      }
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed')
+      setError(err.response?.data?.error || err.response?.data?.message || 'Registration failed')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleVerify = async (otp) => {
-    setLoading(true)
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault()
     setError('')
+    setLoading(true)
+    const otp = e.target.otp.value
     try {
-      const res = await authApi.verifyOtp(pendingEmail, otp)
+      const res = await authApi.verifyOtp(email, otp)
       localStorage.setItem('token', res.data.token)
       localStorage.setItem('role', res.data.role)
       localStorage.setItem('username', res.data.username)
       navigate('/dashboard')
     } catch (err) {
-      setError(err.response?.data?.error || 'Invalid OTP')
+      setError(err.response?.data?.error || err.response?.data?.message || 'OTP verification failed')
     } finally {
       setLoading(false)
     }
@@ -44,6 +59,46 @@ export default function Signup() {
 
   const inputClass =
     'w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-accent-blue outline-none text-headline'
+
+  if (step === 2) {
+    return (
+      <div className="min-h-screen bg-cinematic-black">
+        <Navbar />
+        <div className="pt-24 pb-16 px-4 flex justify-center">
+          <form onSubmit={handleVerifyOtp} className="glass max-w-md w-full rounded-2xl p-8 space-y-4">
+            <h1 className="text-2xl font-bold text-headline">Verify Email</h1>
+            <p className="text-body text-sm">
+              We have sent a 6-digit verification code to <strong className="text-accent-blue">{email}</strong>. Please enter it below to verify your account.
+            </p>
+            <input
+              name="otp"
+              type="text"
+              pattern="[0-9]{6}"
+              placeholder="Enter 6-digit OTP"
+              className={inputClass}
+              maxLength={6}
+              required
+            />
+            {error && <p className="text-neon-red text-sm">{error}</p>}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 rounded-xl bg-accent-blue font-medium disabled:opacity-50"
+            >
+              {loading ? 'Verifying...' : 'Verify & Register'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="w-full py-2 text-center text-sm text-body hover:text-white transition-colors"
+            >
+              Go Back
+            </button>
+          </form>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-cinematic-black">
@@ -67,22 +122,13 @@ export default function Signup() {
             disabled={loading}
             className="w-full py-3 rounded-xl bg-accent-blue font-medium disabled:opacity-50"
           >
-            {loading ? 'Sending OTP...' : 'Send Verification OTP'}
+            {loading ? 'Sending verification...' : 'Create Account'}
           </button>
           <p className="text-body text-sm text-center">
             Have an account? <Link to="/login" className="text-accent-blue">Login</Link>
           </p>
         </form>
       </div>
-      {pendingEmail && (
-        <OtpModal
-          email={pendingEmail}
-          onVerify={handleVerify}
-          onClose={() => setPendingEmail(null)}
-          loading={loading}
-          error={error}
-        />
-      )}
     </div>
   )
 }

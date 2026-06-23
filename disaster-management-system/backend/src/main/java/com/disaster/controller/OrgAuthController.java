@@ -10,8 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/org")
 public class OrgAuthController {
@@ -23,24 +21,42 @@ public class OrgAuthController {
     }
 
     @PostMapping("/auth/register")
-    public ResponseEntity<Map<String, String>> register(@Valid @RequestBody OrgRegisterRequest req) {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody OrgRegisterRequest req) {
         if (!req.password().equals(req.confirmPassword())) {
             throw new IllegalArgumentException("Passwords do not match");
         }
         var data = new OrganisationAuthService.OrgRegistrationData(
                 req.organisationName(), req.email(), req.password(),
                 req.country(), req.state(), req.city(), req.headquartersLocation());
-        return ResponseEntity.ok(orgAuthService.registerPending(data));
+        return ResponseEntity.ok(orgAuthService.register(data));
     }
 
     @PostMapping("/auth/verify-otp")
-    public ResponseEntity<AuthResponse> verifyOtp(@RequestBody OtpRequest req) {
-        return ResponseEntity.ok(orgAuthService.verifyOtp(req.email(), req.otp()));
+    public ResponseEntity<AuthResponse> verifyOtp(@Valid @RequestBody VerifyOtpRequest req) {
+        return ResponseEntity.ok(orgAuthService.verifyRegisterOtp(req.email(), req.otp()));
     }
 
     @PostMapping("/auth/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody OrgLoginRequest req) {
-        return ResponseEntity.ok(orgAuthService.login(req.email(), req.password()));
+    public ResponseEntity<OrgLoginResponse> login(@RequestBody OrgLoginRequest req) {
+        // Map AuthResponse to matching legacy or return directly
+        AuthResponse response = orgAuthService.login(req.email(), req.password());
+        return ResponseEntity.ok(new OrgLoginResponse(
+                response.getToken(),
+                response.getRole(),
+                response.getUsername(),
+                response.getMessage(),
+                response.isRequireOtp(),
+                response.getEmail()
+        ));
+    }
+
+    @PostMapping("/auth/resend-otp")
+    public ResponseEntity<AuthResponse> resendOtp(@RequestBody java.util.Map<String, String> body) {
+        String email = body.get("email");
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+        return ResponseEntity.ok(orgAuthService.resendOtp(email));
     }
 
     @PutMapping("/profile")
@@ -55,7 +71,15 @@ public class OrgAuthController {
             @NotBlank String confirmPassword,
             String country, String state, String city, String headquartersLocation) {}
 
-    public record OtpRequest(@Email String email, @NotBlank String otp) {}
-
     public record OrgLoginRequest(@Email String email, @NotBlank String password) {}
+
+    public record VerifyOtpRequest(@NotBlank @Email String email, @NotBlank String otp) {}
+
+    public record OrgLoginResponse(
+            String token,
+            String role,
+            String username,
+            String message,
+            boolean requireOtp,
+            String email) {}
 }

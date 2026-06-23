@@ -8,6 +8,7 @@
 
 html {
   scroll-behavior: smooth;
+  height: 100%;
 }
 
 body {
@@ -16,6 +17,11 @@ body {
   background: #030308;
   color: rgba(255, 255, 255, 0.92);
   overflow-x: hidden;
+  height: 100%;
+}
+
+#root {
+  height: 100%;
 }
 
 /* Dashboard ambient background */
@@ -91,6 +97,8 @@ body {
 .leaflet-container {
   background: #0a0c14 !important;
   font-family: Inter, system-ui, sans-serif;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .leaflet-control-zoom a {
@@ -218,7 +226,10 @@ body {
 }
 
 .map-cinematic-overlay {
-  mix-blend-mode: screen;
+  /* mix-blend-mode removed — it made tiles invisible on dark backgrounds */
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .map-intel-grid {
@@ -372,3 +383,92 @@ body {
     font-size: 9px;
   }
 }
+
+@keyframes radarPulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 240, 255, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 240, 255, 0); }
+}
+
+@keyframes sosBlink {
+  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 20px rgba(255,45,85,0.8); }
+  50% { opacity: 0.6; transform: scale(1.1); box-shadow: 0 0 40px rgba(255,45,85,1); }
+}
+
+@keyframes tickerScroll {
+  0% { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}
+
+.glow-panel {
+  background: rgba(12, 14, 24, 0.85);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 40px -10px rgba(0, 80, 255, 0.2);
+}
+
+.cyber-button {
+  background: linear-gradient(135deg, rgba(0,80,255,0.2), transparent);
+  border: 1px solid rgba(0,80,255,0.5);
+  transition: all 0.3s;
+}
+.cyber-button:hover {
+  background: rgba(0,80,255,0.3);
+  box-shadow: 0 0 20px rgba(0,80,255,0.4);
+}
+
+/* ── Custom Leaflet Popup Overrides ── */
+.custom-leaflet-popup .leaflet-popup-content-wrapper {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+.custom-leaflet-popup .leaflet-popup-content {
+  margin: 0 !important;
+  width: auto !important;
+}
+.custom-leaflet-popup .leaflet-popup-tip-container {
+  display: none;
+}
+.leaflet-popup-content-wrapper {
+  background: rgba(5, 5, 15, 0.97) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 12px !important;
+  color: #fff !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05) !important;
+  backdrop-filter: blur(20px);
+}
+.leaflet-popup-tip {
+  background: rgba(5,5,15,0.97) !important;
+}
+.leaflet-popup-close-button {
+  color: rgba(255,255,255,0.4) !important;
+  font-size: 18px !important;
+  top: 6px !important;
+  right: 8px !important;
+}
+.leaflet-popup-close-button:hover {
+  color: #fff !important;
+}
+
+/* ── Safe Zone hub pulse animation ── */
+@keyframes szPulse {
+  from { box-shadow: 0 0 8px currentColor, inset 0 0 4px currentColor; opacity: 0.7; }
+  to   { box-shadow: 0 0 28px currentColor, inset 0 0 16px currentColor; opacity: 1; }
+}
+
+/* ── Evacuation hub blink ── */
+@keyframes hubblink {
+  from { box-shadow: 0 0 10px rgba(74,222,128,0.5); }
+  to   { box-shadow: 0 0 30px rgba(74,222,128,0.9), 0 0 60px rgba(74,222,128,0.3); }
+}
+
+/* ── Leaflet marker cluster custom styles ── */
+.custom-cluster-icon {
+  background: transparent !important;
+  border: none !important;
+}
+

@@ -34,4 +34,10 @@ public class User {
     private double latitude;
     private double longitude;
     private Instant createdAt;
+
+    public void syncGeo() {
+        if (latitude != 0 || longitude != 0) {
+            this.geoLocation = GeoLocation.of(latitude, longitude);
+        }
+    }
 }

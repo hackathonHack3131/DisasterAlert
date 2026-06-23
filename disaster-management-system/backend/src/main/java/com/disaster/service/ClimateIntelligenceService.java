@@ -119,14 +119,14 @@ public class ClimateIntelligenceService {
 
     private List<HeatmapPoint> buildGrid(double centerLat, double centerLng, double intensity, double spread) {
         List<HeatmapPoint> points = new ArrayList<>();
-        for (int i = -4; i <= 4; i++) {
-            for (int j = -4; j <= 4; j++) {
+        for (int i = -8; i <= 8; i++) {
+            for (int j = -8; j <= 8; j++) {
                 double dist = Math.sqrt(i * i + j * j);
-                double weight = Math.min(1.0, intensity * Math.exp(-dist * dist / (2 * spread * 8)) * 1.4);
-                if (weight > 0.08) {
+                double weight = Math.min(1.0, intensity * Math.exp(-dist * dist / (2 * spread * 12)) * 1.4);
+                if (weight > 0.03) {
                     points.add(new HeatmapPoint(
-                            centerLat + i * 0.18,
-                            centerLng + j * 0.18,
+                            centerLat + i * 0.06,
+                            centerLng + j * 0.06,
                             Math.min(1.0, weight)));
                 }
             }

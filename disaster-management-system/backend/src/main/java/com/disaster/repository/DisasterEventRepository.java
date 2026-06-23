@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface DisasterEventRepository extends MongoRepository<DisasterEvent, String> {
     List<DisasterEvent> findTop20ByOrderByTimestampDesc();
+    List<DisasterEvent> findByActiveTrueOrderByTimestampDesc();
 }
+

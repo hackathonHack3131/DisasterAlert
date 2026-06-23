@@ -1,0 +1,30 @@
+# System / OS
+.DS_Store
+Thumbs.db
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.iml
+
+# Node / JS
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Java
+target/
+*.class
+
+# Secrets / Config
+.env
+*.env
+!*.env.example
+
+# Custom files
+replace_secret.txt
+walkthrough.md
+implementation_plan.md
+task.md
+deployment_guide.md

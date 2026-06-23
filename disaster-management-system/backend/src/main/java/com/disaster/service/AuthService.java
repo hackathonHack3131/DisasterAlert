@@ -17,82 +17,128 @@ import java.util.Map;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final OtpService otpService;
-    private final EmailService emailService;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
-    private final ObjectMapper objectMapper;
+    private final OtpService otpService;
+    private final EmailService emailService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public AuthService(
             UserRepository userRepository,
-            OtpService otpService,
-            EmailService emailService,
             JwtService jwtService,
             PasswordEncoder passwordEncoder,
-            ObjectMapper objectMapper) {
+            OtpService otpService,
+            EmailService emailService) {
         this.userRepository = userRepository;
-        this.otpService = otpService;
-        this.emailService = emailService;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
-        this.objectMapper = objectMapper;
+        this.otpService = otpService;
+        this.emailService = emailService;
     }
 
-    public Map<String, String> registerPending(UserRegistrationData data) {
+    /** First step registration — save unverified user to DB and send verification OTP */
+    public AuthResponse register(UserRegistrationData data) {
         if (userRepository.existsByUsername(data.username())) {
-            throw new IllegalArgumentException("Username already exists");
+            throw new com.disaster.exception.ConflictException("Username already exists");
         }
         if (userRepository.existsByEmail(data.email())) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new com.disaster.exception.ConflictException("Email already exists");
         }
+
+        User user = User.builder()
+                .username(data.username())
+                .email(data.email())
+                .password(passwordEncoder.encode(data.password()))
+                .location(data.location())
+                .state(data.state())
+                .city(data.city())
+                .role(UserRole.CITIZEN)
+                .verified(false)
+                .latitude(20.5937)
+                .longitude(78.9629)
+                .createdAt(Instant.now())
+                .build();
+        user.syncGeo();
+        userRepository.save(user);
+
         try {
-            String payload = objectMapper.writeValueAsString(data);
-            String otp = otpService.generateAndStore(data.email(), OtpVerification.OtpPurpose.USER_REGISTER, payload);
+            String otp = otpService.generateAndStore(data.email(), OtpVerification.OtpPurpose.USER_REGISTER, null);
             emailService.sendOtpEmail(data.email(), otp);
-            return Map.of("message", "OTP sent to your email. Check inbox and spam folder.", "email", data.email());
-        } catch (EmailService.EmailDeliveryException e) {
-            otpService.deleteByEmail(data.email());
-            throw new IllegalArgumentException("Failed to send OTP email: " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Registration failed", e);
+            userRepository.delete(user);
+            throw new RuntimeException("Failed to prepare verification email: " + e.getMessage(), e);
         }
+
+        return AuthResponse.builder()
+                .requireOtp(true)
+                .email(data.email())
+                .message("Verification OTP sent to " + data.email())
+                .build();
     }
 
-    public AuthResponse verifyOtp(String email, String otp) {
-        OtpVerification record = otpService.verify(email, otp);
-        try {
-            UserRegistrationData data = objectMapper.readValue(record.getPayloadJson(), UserRegistrationData.class);
-            User user = User.builder()
-                    .username(data.username())
-                    .email(data.email())
-                    .password(passwordEncoder.encode(data.password()))
-                    .location(data.location())
-                    .state(data.state())
-                    .city(data.city())
-                    .role(UserRole.CITIZEN)
-                    .verified(true)
-                    .latitude(20.5937)
-                    .longitude(78.9629)
-                    .createdAt(Instant.now())
-                    .build();
-            userRepository.save(user);
-            String token = jwtService.generateToken(user.getUsername(),
-                    Map.of("role", user.getRole().name(), "userId", user.getId()));
-            return new AuthResponse(token, user.getRole().name(), user.getUsername(), "Account created");
-        } catch (Exception e) {
-            throw new RuntimeException("Verification failed", e);
+    /** Second step registration — verify OTP and activate user in DB */
+    public AuthResponse verifyRegisterOtp(String email, String otp) {
+        OtpVerification verification = otpService.verify(email, otp);
+        if (verification.getPurpose() != OtpVerification.OtpPurpose.USER_REGISTER) {
+            throw new IllegalArgumentException("Invalid OTP purpose");
         }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        user.setVerified(true);
+        userRepository.save(user);
+
+        String token = jwtService.generateToken(user.getUsername(),
+                Map.of("role", user.getRole().name(), "userId", user.getId()));
+        return new AuthResponse(token, user.getRole().name(), user.getUsername(), "Email verified successfully. You can now login.");
     }
 
+    /** Login validation — check credentials directly and return JWT (NO OTP flow) */
     public AuthResponse login(String username, String password) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
+                .orElseGet(() -> userRepository.findByEmail(username)
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid credentials")));
+        
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new IllegalArgumentException("Invalid credentials");
         }
+
+        if (!user.isVerified()) {
+            throw new com.disaster.exception.AccountNotVerifiedException("Account not verified", user.getEmail());
+        }
+
         String token = jwtService.generateToken(user.getUsername(),
                 Map.of("role", user.getRole().name(), "userId", user.getId()));
         return new AuthResponse(token, user.getRole().name(), user.getUsername(), "Login successful");
+    }
+
+    /** Resend registration verification OTP */
+    public AuthResponse resendOtp(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (user.isVerified()) {
+            throw new com.disaster.exception.ConflictException("Account already verified");
+        }
+
+        String newOtp = otpService.generateAndStore(email, OtpVerification.OtpPurpose.USER_REGISTER, null);
+        try {
+            emailService.sendOtpEmail(email, newOtp);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send OTP: " + e.getMessage(), e);
+        }
+
+        return AuthResponse.builder()
+                .requireOtp(true)
+                .email(email)
+                .message("New OTP sent to " + email)
+                .build();
+    }
+
+    /** Verify Login 2FA OTP (Deprecated/No-op stub) */
+    public AuthResponse verifyLoginOtp(String email, String otp) {
+        throw new UnsupportedOperationException("Login 2FA OTP is deprecated");
     }
 
     public record UserRegistrationData(

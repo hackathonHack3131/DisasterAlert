@@ -29,6 +29,8 @@ public class DisasterEvent {
     private String message;
     private double affectedRadius;
     private EventSource source;
+    @Builder.Default
+    private boolean active = true;
 
     public void syncGeo() {
         this.geoLocation = GeoLocation.of(latitude, longitude);

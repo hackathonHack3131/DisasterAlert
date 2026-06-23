@@ -2,9 +2,11 @@ package com.disaster.controller;
 
 import com.disaster.dto.OrganisationCard;
 import com.disaster.model.Alert;
+import com.disaster.model.DisasterEvent;
 import com.disaster.model.Organisation;
 import com.disaster.model.Shelter;
 import com.disaster.repository.AlertRepository;
+import com.disaster.repository.DisasterEventRepository;
 import com.disaster.repository.OrganisationRepository;
 import com.disaster.repository.RescueRequestRepository;
 import com.disaster.repository.ShelterRepository;
@@ -22,16 +24,19 @@ public class PublicController {
     private final ShelterRepository shelterRepository;
     private final AlertRepository alertRepository;
     private final RescueRequestRepository rescueRepository;
+    private final DisasterEventRepository disasterEventRepository;
 
     public PublicController(
             OrganisationRepository organisationRepository,
             ShelterRepository shelterRepository,
             AlertRepository alertRepository,
-            RescueRequestRepository rescueRepository) {
+            RescueRequestRepository rescueRepository,
+            DisasterEventRepository disasterEventRepository) {
         this.organisationRepository = organisationRepository;
         this.shelterRepository = shelterRepository;
         this.alertRepository = alertRepository;
         this.rescueRepository = rescueRepository;
+        this.disasterEventRepository = disasterEventRepository;
     }
 
     @GetMapping("/organisations")
@@ -61,5 +66,15 @@ public class PublicController {
     @GetMapping("/alerts")
     public ResponseEntity<List<Alert>> recentAlerts() {
         return ResponseEntity.ok(alertRepository.findTop20ByOrderByTimestampDesc());
+    }
+
+    @GetMapping("/events")
+    public ResponseEntity<List<DisasterEvent>> recentEvents() {
+        return ResponseEntity.ok(disasterEventRepository.findTop20ByOrderByTimestampDesc());
+    }
+
+    @GetMapping("/shelters")
+    public ResponseEntity<List<Shelter>> publicShelters() {
+        return ResponseEntity.ok(shelterRepository.findAll());
     }
 }

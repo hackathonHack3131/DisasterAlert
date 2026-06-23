@@ -24,6 +24,6 @@ public class OtpVerification {
     private String payloadJson;
 
     public enum OtpPurpose {
-        USER_REGISTER, ORG_REGISTER
+        USER_REGISTER, ORG_REGISTER, USER_LOGIN, ORG_LOGIN
     }
 }

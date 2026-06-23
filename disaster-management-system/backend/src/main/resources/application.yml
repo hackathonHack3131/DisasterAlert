@@ -8,10 +8,11 @@ spring:
     mongodb:
       uri: ${MONGODB_URI:mongodb://localhost:27017/disaster_db}
   mail:
-    host: ${MAIL_HOST:smtp-relay.brevo.com}
+    host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME:${GMAIL_USER:}}
     password: ${MAIL_PASSWORD:${GMAIL_APP_PASSWORD:}}
+    brevo-api-key: ${BREVO_API_KEY:}
     properties:
       mail:
         smtp:
@@ -33,16 +34,16 @@ app:
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000}
   openweather:
-    api-key: ${OPENWEATHER_API_KEY:}
+    api-key: ""
   nasa-firms:
-    map-key: ${NASA_FIRMS_MAP_KEY:}
+    map-key: ""
   google:
-    api-key: ${GOOGLE_API_KEY:}
+    api-key: ""
   gee:
-    service-url: ${GEE_SERVICE_URL:http://localhost:5050}
+    service-url: ""
   twilio:
-    account-sid: ${TWILIO_ACCOUNT_SID:}
-    auth-token: ${TWILIO_AUTH_TOKEN:}
-    phone-number: ${TWILIO_PHONE_NUMBER:}
+    account-sid: ""
+    auth-token: ""
+    phone-number: ""
   integrations:
     auto-ingest: ${AUTO_INGEST:false}

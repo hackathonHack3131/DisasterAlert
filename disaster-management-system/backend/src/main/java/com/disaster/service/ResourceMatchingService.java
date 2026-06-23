@@ -57,11 +57,11 @@ public class ResourceMatchingService {
         return score;
     }
 
-    private List<String> supportTypesFor(DisasterType type) {
+    public List<String> supportTypesFor(DisasterType type) {
         return switch (type) {
-            case FLOOD -> List.of("Food", "Drinking Water", "Shelter", "Rescue Boats", "Evacuation Transport");
+            case FLOOD -> List.of("Rescue Boats", "Drinking Water", "Shelter", "Food");
             case FIRE -> List.of("Medical Aid", "Shelter", "Ambulance", "Evacuation Transport");
-            case EARTHQUAKE -> List.of("Medical Aid", "Shelter", "Rescue Team", "Food");
+            case EARTHQUAKE -> List.of("Medical Aid", "Shelter", "Food", "Rescue Equipment");
             case CYCLONE -> List.of("Shelter", "Food", "Drinking Water", "Evacuation Transport");
             case LANDSLIDE -> List.of("Rescue Team", "Medical Aid", "Shelter");
         };

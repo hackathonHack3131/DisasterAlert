@@ -81,6 +81,70 @@ public class EmailService {
         }
     }
 
+    @Async
+    public void sendOrgDisasterAlert(String to, DisasterEvent event, List<String> requiredResources) {
+        String subject = "RESCUE DEPLOYMENT REQUEST";
+        String resourcesStr = String.join(", ", requiredResources);
+        String html = """
+                <div style="font-family:Arial,sans-serif;max-width:550px;margin:0 auto;padding:24px;background:#0d0d0d;color:#fff;border-radius:16px;">
+                  <h2 style="color:#FF6A00;margin:0 0 16px;text-transform:uppercase;">RESCUE DEPLOYMENT REQUEST</h2>
+                  <p>A new disaster event has occurred in your zone. Please coordinate resource deployment.</p>
+                  <div style="background:rgba(255,255,255,0.05);padding:16px;border-radius:12px;margin:20px 0;">
+                    <p><strong>Disaster Type:</strong> %s</p>
+                    <p><strong>Severity:</strong> %d/10</p>
+                    <p><strong>Location:</strong> %s</p>
+                    <p><strong>Coordinates:</strong> %f, %f (Radius: %.1f km)</p>
+                    <p><strong>Required Resources:</strong> <span style="color:#ffcc00;font-weight:bold;">%s</span></p>
+                  </div>
+                  <p>Please log into your dashboard to accept rescue missions and activate shelters.</p>
+                </div>
+                """.formatted(event.getDisasterType(), event.getSeverity(), event.getLocation(),
+                event.getLatitude(), event.getLongitude(), event.getAffectedRadius(), resourcesStr);
+
+        String text = String.format(
+                "RESCUE DEPLOYMENT REQUEST%n%nType: %s%nSeverity: %d/10%nLocation: %s%nCoordinates: %f, %f%nAffected Radius: %.1f km%nRequired Resources: %s",
+                event.getDisasterType(), event.getSeverity(), event.getLocation(),
+                event.getLatitude(), event.getLongitude(), event.getAffectedRadius(), resourcesStr);
+        try {
+            deliverSync(to, subject, text, html);
+            log.info("Org disaster alert email delivered to {}", to);
+        } catch (EmailDeliveryException e) {
+            log.error("Org disaster alert email failed for {}: {}", to, e.getMessage());
+        }
+    }
+
+    @Async
+    public void sendSosAlertToOrganisation(String to, com.disaster.model.RescueRequest request) {
+        String subject = "EMERGENCY SOS: Citizen Needs Rescue near Your Location";
+        String html = """
+                <div style="font-family:Arial,sans-serif;max-width:550px;margin:0 auto;padding:24px;background:#0d0202;color:#fff;border:2px solid #ff3333;border-radius:16px;">
+                  <h2 style="color:#ff3333;margin:0 0 16px;text-transform:uppercase;letter-spacing:1px;text-align:center;">🔴 CRITICAL SOS SIGNAL 🔴</h2>
+                  <p style="color:rgba(255,255,255,0.8);font-size:14px;line-height:1.5;">An emergency SOS beacon has been broadcasted by a citizen near your operational sector. Immediate response is requested.</p>
+                  
+                  <div style="background:rgba(255,255,255,0.05);padding:16px;border-radius:12px;margin:20px 0;border-left:4px solid #ff3333;">
+                    <p style="margin:4px 0;font-size:13px;color:rgba(255,255,255,0.5);"><strong>URGENCY PRIORITY:</strong> <span style="color:#ff9900;font-weight:bold;">%s</span></p>
+                    <p style="margin:4px 0;font-size:13px;color:rgba(255,255,255,0.5);"><strong>COORDINATES:</strong> <span style="color:#fff;">%f, %f</span></p>
+                    <p style="margin:12px 0 4px;font-size:13px;color:rgba(255,255,255,0.5);"><strong>EMERGENCY DESCRIPTION:</strong></p>
+                    <p style="margin:0;font-size:14px;color:#fff;font-style:italic;">"%s"</p>
+                  </div>
+                  
+                  <p style="color:rgba(255,255,255,0.7);font-size:13px;line-height:1.5;">Please log into the Disaster Management Portal to coordinate dispatch teams and shelters to assist this person.</p>
+                  <hr style="border:none;border-top:1px solid rgba(255,51,51,0.2);margin:24px 0;">
+                  <p style="color:rgba(255,255,255,0.4);font-size:11px;text-align:center;">Smart Disaster Alert &amp; Emergency Response Network</p>
+                </div>
+                """.formatted(request.getPriority(), request.getLatitude(), request.getLongitude(), request.getDescription());
+
+        String text = String.format(
+                "CRITICAL SOS ALERT%n%nPriority: %s%nCoordinates: %f, %f%nDescription: %s%n%nPlease respond immediately.",
+                request.getPriority(), request.getLatitude(), request.getLongitude(), request.getDescription());
+        try {
+            deliverSync(to, subject, text, html);
+            log.info("SOS alert email delivered to organisation: {}", to);
+        } catch (EmailDeliveryException e) {
+            log.error("SOS alert email failed for organisation {}: {}", to, e.getMessage());
+        }
+    }
+
     private void deliverSync(String to, String subject, String text, String html) throws EmailDeliveryException {
         if (fromEmail == null || fromEmail.isBlank()) {
             throw new EmailDeliveryException("Mail sender address (MAIL_FROM) is not configured");
@@ -191,16 +255,33 @@ public class EmailService {
 
     @Value("${GMAIL_APP_PASSWORD:}")
     private String gmailAppPassword;
+    @Value("${SOS_ALERT_EMAIL:}")
+    private String sosAuthorityEmail;
 
-    @Value("${BREVO_API_KEY:}")
+    /**
+     * Send SOS alert to a designated authority email (e.g., central emergency coordination).
+     */
+    public void sendSosAlertToAuthority(String to, com.disaster.model.RescueRequest request) {
+        // Reuse the same email content as organisation alerts.
+        sendSosAlertToOrganisation(to, request);
+    }
+
+        public String getSosAuthorityEmail() {
+        return sosAuthorityEmail;
+    }
+    @Value("${spring.mail.brevo-api-key:${BREVO_API_KEY:}}")
     private String brevoApiKey;
 
     private boolean hasGmailCredentials() {
-        return gmailAppPassword != null && !gmailAppPassword.isBlank();
+        return (gmailAppPassword != null && !gmailAppPassword.isBlank())
+                || (useGmail() && mailPassword != null && !mailPassword.isBlank());
     }
 
     private String getGmailPassword() {
-        return gmailAppPassword;
+        if (gmailAppPassword != null && !gmailAppPassword.isBlank()) {
+            return gmailAppPassword;
+        }
+        return mailPassword;
     }
 
     private String resolveSmtpUsername() {

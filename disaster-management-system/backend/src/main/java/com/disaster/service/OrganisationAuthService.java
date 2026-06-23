@@ -2,8 +2,8 @@ package com.disaster.service;
 
 import com.disaster.config.JwtService;
 import com.disaster.dto.AuthResponse;
-import com.disaster.model.OtpVerification;
 import com.disaster.model.Organisation;
+import com.disaster.model.OtpVerification;
 import com.disaster.repository.OrganisationRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,81 +16,124 @@ import java.util.Map;
 public class OrganisationAuthService {
 
     private final OrganisationRepository organisationRepository;
-    private final OtpService otpService;
-    private final EmailService emailService;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
-    private final ObjectMapper objectMapper;
+    private final OtpService otpService;
+    private final EmailService emailService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public OrganisationAuthService(
             OrganisationRepository organisationRepository,
-            OtpService otpService,
-            EmailService emailService,
             JwtService jwtService,
             PasswordEncoder passwordEncoder,
-            ObjectMapper objectMapper) {
+            OtpService otpService,
+            EmailService emailService) {
         this.organisationRepository = organisationRepository;
-        this.otpService = otpService;
-        this.emailService = emailService;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
-        this.objectMapper = objectMapper;
+        this.otpService = otpService;
+        this.emailService = emailService;
     }
 
-    public Map<String, String> registerPending(OrgRegistrationData data) {
+    /** First step organisation registration — save unverified organisation to DB and send verification OTP */
+    public AuthResponse register(OrgRegistrationData data) {
         if (organisationRepository.existsByEmail(data.email())) {
-            throw new IllegalArgumentException("Email already registered");
+            throw new com.disaster.exception.ConflictException("Email already registered");
         }
+
+        Organisation org = Organisation.builder()
+                .organisationName(data.organisationName())
+                .email(data.email())
+                .password(passwordEncoder.encode(data.password()))
+                .country(data.country())
+                .state(data.state())
+                .city(data.city())
+                .headquartersLocation(data.headquartersLocation())
+                .verified(false)
+                .activeStatus(true)
+                .latitude(20.5937)
+                .longitude(78.9629)
+                .createdAt(Instant.now())
+                .build();
+        org.syncGeo();
+        organisationRepository.save(org);
+
         try {
-            String payload = objectMapper.writeValueAsString(data);
-            String otp = otpService.generateAndStore(data.email(), OtpVerification.OtpPurpose.ORG_REGISTER, payload);
+            String otp = otpService.generateAndStore(data.email(), OtpVerification.OtpPurpose.ORG_REGISTER, null);
             emailService.sendOtpEmail(data.email(), otp);
-            return Map.of("message", "OTP sent to your email. Check inbox and spam folder.", "email", data.email());
-        } catch (EmailService.EmailDeliveryException e) {
-            otpService.deleteByEmail(data.email());
-            throw new IllegalArgumentException("Failed to send OTP email: " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Organisation registration failed", e);
+            organisationRepository.delete(org);
+            throw new RuntimeException("Failed to prepare verification email: " + e.getMessage(), e);
         }
+
+        return AuthResponse.builder()
+                .requireOtp(true)
+                .email(data.email())
+                .message("Verification OTP sent to " + data.email())
+                .build();
     }
 
-    public AuthResponse verifyOtp(String email, String otp) {
-        OtpVerification record = otpService.verify(email, otp);
-        try {
-            OrgRegistrationData data = objectMapper.readValue(record.getPayloadJson(), OrgRegistrationData.class);
-            Organisation org = Organisation.builder()
-                    .organisationName(data.organisationName())
-                    .email(data.email())
-                    .password(passwordEncoder.encode(data.password()))
-                    .country(data.country())
-                    .state(data.state())
-                    .city(data.city())
-                    .headquartersLocation(data.headquartersLocation())
-                    .verified(true)
-                    .activeStatus(true)
-                    .latitude(20.5937)
-                    .longitude(78.9629)
-                    .createdAt(Instant.now())
-                    .build();
-            org.syncGeo();
-            organisationRepository.save(org);
-            String token = jwtService.generateToken(org.getEmail(),
-                    Map.of("role", "ROLE_ORGANISATION", "orgId", org.getId()));
-            return new AuthResponse(token, "ROLE_ORGANISATION", org.getOrganisationName(), "Organisation activated");
-        } catch (Exception e) {
-            throw new RuntimeException("Verification failed", e);
+    /** Second step organisation registration — verify OTP and activate organisation */
+    public AuthResponse verifyRegisterOtp(String email, String otp) {
+        OtpVerification verification = otpService.verify(email, otp);
+        if (verification.getPurpose() != OtpVerification.OtpPurpose.ORG_REGISTER) {
+            throw new IllegalArgumentException("Invalid OTP purpose");
         }
+
+        Organisation org = organisationRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Organisation not found"));
+
+        org.setVerified(true);
+        organisationRepository.save(org);
+
+        String token = jwtService.generateToken(org.getEmail(),
+                Map.of("role", "ROLE_ORGANISATION", "orgId", org.getId()));
+        return new AuthResponse(token, "ROLE_ORGANISATION", org.getOrganisationName(), "Organisation verified and registered");
     }
 
+    /** Organisation login validation — check credentials directly and return JWT (NO OTP flow) */
     public AuthResponse login(String email, String password) {
         Organisation org = organisationRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
         if (!passwordEncoder.matches(password, org.getPassword())) {
             throw new IllegalArgumentException("Invalid credentials");
         }
+
+        if (!org.isVerified()) {
+            throw new com.disaster.exception.AccountNotVerifiedException("Account not verified", org.getEmail());
+        }
+
         String token = jwtService.generateToken(org.getEmail(),
                 Map.of("role", "ROLE_ORGANISATION", "orgId", org.getId()));
         return new AuthResponse(token, "ROLE_ORGANISATION", org.getOrganisationName(), "Login successful");
+    }
+
+    /** Resend organisation registration verification OTP */
+    public AuthResponse resendOtp(String email) {
+        Organisation org = organisationRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Organisation not found"));
+
+        if (org.isVerified()) {
+            throw new com.disaster.exception.ConflictException("Account already verified");
+        }
+
+        String newOtp = otpService.generateAndStore(email, OtpVerification.OtpPurpose.ORG_REGISTER, null);
+        try {
+            emailService.sendOtpEmail(email, newOtp);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send OTP: " + e.getMessage(), e);
+        }
+
+        return AuthResponse.builder()
+                .requireOtp(true)
+                .email(email)
+                .message("New OTP sent to " + email)
+                .build();
+    }
+
+    /** Verify Organisation Login 2FA OTP (Deprecated/No-op stub) */
+    public AuthResponse verifyLoginOtp(String email, String otp) {
+        throw new UnsupportedOperationException("Login 2FA OTP is deprecated");
     }
 
     public Organisation updateProfile(String email, Organisation updates) {

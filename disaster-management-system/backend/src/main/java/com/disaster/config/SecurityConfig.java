@@ -33,12 +33,13 @@ public class SecurityConfig {
                 .cors(cors -> {})
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/api/org/auth/**", "/api/public/**", "/api/integrations/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/org/auth/**", "/api/public/**", "/api/integrations/**", "/api/ai/**").permitAll()
+                        .requestMatchers("/api/rescue/request").permitAll()  // SOS beacon — must be accessible without login
                         .requestMatchers("/api/climate/**").authenticated()
                         // test-email is under /api/auth/**
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/events/simulate").hasRole("ADMIN")
+                        .requestMatchers("/api/events/simulate", "/api/simulate/**").authenticated()  // any logged-in user can run simulations
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
