@@ -1,7 +1,7 @@
 import { Client } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
 
-const WS_URL = import.meta.env.VITE_WS_URL || `${window.location.protocol}//${window.location.host}`
+const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:8081/ws'
 
 export function createStompClient(onConnect) {
   const client = new Client({
