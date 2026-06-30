@@ -13,11 +13,11 @@ import java.util.Map;
 public class HealthController {
 
     @GetMapping("/health")
-    public ResponseEntity<?> health() {
-        return ResponseEntity.ok(Map.of(
-                "status", "UP",
-                "service", "Smart Disaster Alert System",
-                "timestamp", LocalDateTime.now().toString()
-        ));
-    }
+public ResponseEntity<?> health() {
+    return ResponseEntity.ok(Map.of(
+            "status", "UP",
+            "service", "Smart Disaster Alert System",
+            "timestamp", LocalDateTime.now().toString()
+    ));
+}
 }

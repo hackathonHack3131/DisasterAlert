@@ -38,55 +38,55 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
 
-                        // ── OPTIONS preflight — always allow ──────────────────────────
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+        // ── OPTIONS preflight — always allow ──────────────────────────
+        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // ── WebSocket ─────────────────────────────────────────────────
-                        .requestMatchers("/ws/**", "/ws/info/**").permitAll()
+        // ── WebSocket ─────────────────────────────────────────────────
+        .requestMatchers("/ws/**", "/ws/info/**").permitAll()
 
-                        // ── Citizen Auth ──────────────────────────────────────────────
-                        .requestMatchers("/api/auth/**").permitAll()
+        // ── Citizen Auth ──────────────────────────────────────────────
+        .requestMatchers("/api/auth/**").permitAll()
 
-                        // ── Organisation Auth ─────────────────────────────────────────
-                        .requestMatchers("/api/org/auth/**").permitAll()
-                        .requestMatchers("/api/org/register").permitAll()
-                        .requestMatchers("/api/org/login").permitAll()
-                        .requestMatchers("/api/org/verify-otp").permitAll()
-                        .requestMatchers("/api/org/resend-otp").permitAll()
+        // ── Organisation Auth ─────────────────────────────────────────
+        .requestMatchers("/api/org/auth/**").permitAll()
+        .requestMatchers("/api/org/register").permitAll()
+        .requestMatchers("/api/org/login").permitAll()
+        .requestMatchers("/api/org/verify-otp").permitAll()
+        .requestMatchers("/api/org/resend-otp").permitAll()
 
-                        // ── Organisation Public (homepage + map) ──────────────────────
-                        .requestMatchers(HttpMethod.GET, "/api/org/public/**").permitAll()
+        // ── Organisation Public (homepage + map) ──────────────────────
+        .requestMatchers("/api/org/public/**").permitAll()
 
-                        // ── Shelter Public (map display) ──────────────────────────────
-                        .requestMatchers(HttpMethod.GET, "/api/shelters/public/**").permitAll()
+        // ── Shelter Public (map display) ──────────────────────────────
+        .requestMatchers("/api/shelters/public/**").permitAll()
 
-                        // ── Disaster Public (map markers + UptimeRobot) ───────────────
-                        .requestMatchers(HttpMethod.GET, "/api/disasters/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/simulate/active").permitAll()
+        // ── Disaster Public (map markers + UptimeRobot) ───────────────
+        .requestMatchers("/api/disasters/**").permitAll()
+        .requestMatchers("/api/simulate/active").permitAll()
 
-                        // ── Rescue Public ─────────────────────────────────────────────
-                        .requestMatchers(HttpMethod.POST, "/api/rescue/request").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/rescue/nearby").permitAll()
+        // ── Rescue Public ─────────────────────────────────────────────
+        .requestMatchers(HttpMethod.POST, "/api/rescue/request").permitAll()
+        .requestMatchers("/api/rescue/nearby").permitAll()
 
-                        // ── Public / Integrations / AI ────────────────────────────────
-                        .requestMatchers("/api/public/**").permitAll()
-                        .requestMatchers("/api/integrations/**").permitAll()
-                        .requestMatchers("/api/ai/**").permitAll()
+        // ── Public / Integrations / AI ────────────────────────────────
+        .requestMatchers("/api/public/**").permitAll()
+        .requestMatchers("/api/integrations/**").permitAll()
+        .requestMatchers("/api/ai/**").permitAll()
 
-                        // ── Health check for UptimeRobot ──────────────────────────────
-                        .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
+        // ── Health check for UptimeRobot — NO method restriction ──────
+        .requestMatchers("/api/health").permitAll()
+        .requestMatchers("/actuator/health").permitAll()
 
-                        // ── Simulation — any logged-in user ───────────────────────────
-                        .requestMatchers("/api/events/simulate").authenticated()
-                        .requestMatchers("/api/simulate/**").authenticated()
+        // ── Simulation — any logged-in user ───────────────────────────
+        .requestMatchers("/api/events/simulate").authenticated()
+        .requestMatchers(HttpMethod.POST, "/api/simulate/**").authenticated()
 
-                        // ── Climate — authenticated ───────────────────────────────────
-                        .requestMatchers("/api/climate/**").authenticated()
+        // ── Climate — authenticated ───────────────────────────────────
+        .requestMatchers("/api/climate/**").authenticated()
 
-                        // ── Everything else requires auth ─────────────────────────────
-                        .anyRequest().authenticated()
-                )
+        // ── Everything else requires auth ─────────────────────────────
+        .anyRequest().authenticated()
+)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
